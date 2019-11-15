@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find robot_setup_tf)/launch/custom_hector_mapping.launch" />
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find robot_setup_tf)/rviz/mapping_view.rviz" />
+</launch>
