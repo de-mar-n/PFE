@@ -50,31 +50,44 @@ void setAngle(int n) //Keep beetween 0 (right) and 180 (left)
 #define  Measure  1     //Mode select
 int URECHO = 3;         // PWM Output 0-25000US,Every 50US represent 1cm
 int URTRIG = 5;         // PWM trigger pin
+
+
+
+// ---
+int URECHO2 = 11;
+int URECHO3 = 12;
+
+//int sensorVal2 = 0;
+//int sensorVal3 = 0;
+// ---
+
 int sensorPin = A0;     // select the input pin for the potentiometer
 int sensorValue = 0;    // variable to store the value coming from the sensor
 
 unsigned int DistanceMeasured= 0;
 
-void PWM_Mode()                              // a low pull on pin COMP/TRIG  triggering a sensor reading
+void PWM_Mode(int ECHO)                              // a low pull on pin COMP/TRIG  triggering a sensor reading
 {
   Serial.print("Distance Measured=");
   digitalWrite(URTRIG, LOW);
   digitalWrite(URTRIG, HIGH);               // reading Pin PWM will output pulses
   if( Measure)
   {
-    unsigned long LowLevelTime = pulseIn(URECHO, LOW) ;
+    unsigned long LowLevelTime = pulseIn(ECHO, LOW) ;
     if(LowLevelTime>=45000)                 // the reading is invalid.
     {
       Serial.print("Invalid");
     }
     else{
     DistanceMeasured = LowLevelTime /50;   // every 50us low level stands for 1cm
+    Serial.print("Capteur ");
+    Serial.println(ECHO);
     Serial.print(DistanceMeasured);
     Serial.println("cm");
   }
 
   }
-  else {
+ /* else {
     sensorValue = analogRead(sensorPin);
     if(sensorValue<=10)                   // the reading is invalid.
     {
@@ -85,7 +98,7 @@ void PWM_Mode()                              // a low pull on pin COMP/TRIG  tri
     Serial.print(sensorValue);
     Serial.println("cm");
     }
-  }
+  }*/
 }
 
 
@@ -113,9 +126,11 @@ void setup()
 void loop()
 {
   // ------ For ultrason ------
-  PWM_Mode();
+  PWM_Mode(URECHO);
   delay(100);
-
+  PWM_Mode(URECHO2);
+  delay(100);
+  PWM_Mode(URECHO3);
   // ------ For moving the car ------
   if (DistanceMeasured > LIMIT_DISTANCE || sensorValue > LIMIT_DISTANCE)
   {
