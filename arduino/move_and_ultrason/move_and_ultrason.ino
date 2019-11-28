@@ -20,7 +20,7 @@
 // ---------------- FOR MOVING THE CAR -------------
 #include <Servo.h>
 
-#define LIMIT_DISTANCE 10
+#define LIMIT_DISTANCE 15
 Servo mot;     // create servo object to control the motor
 Servo dir;  // create servo for direction (trun left/right)
 
@@ -47,58 +47,50 @@ void setAngle(int n) //Keep beetween 0 (right) and 180 (left)
 
 
 // ------------- FOR THE ULTRASON ------------
-#define  Measure  1     //Mode select
-int URECHO = 3;         // PWM Output 0-25000US,Every 50US represent 1cm
+
+#define ERROR_VALUE -1
+#define NB_SONAR 3
+// PWM Output 0-25000US,Every 50US represent 1cm
+
+int URECHO1 = 3; //Ultrason du gauche (quand on regarde la voiture en face)   
+int URECHO2 = 11; // Ultrason de milieu 
+int URECHO3 = 12; // Ultrason arriere
+
+int URECHO_array[] = {URECHO1, URECHO2, URECHO3};
+
 int URTRIG = 5;         // PWM trigger pin
 
 
-
-// ---
-int URECHO2 = 11;
-int URECHO3 = 12;
-
+// variable to store the value coming from the sensor
+int sensorValue = 0;
 //int sensorVal2 = 0;
 //int sensorVal3 = 0;
-// ---
 
-int sensorPin = A0;     // select the input pin for the potentiometer
-int sensorValue = 0;    // variable to store the value coming from the sensor
+
+//int sensorPin = A0;     // select the input pin for the potentiometer
 
 unsigned int DistanceMeasured= 0;
 
-void PWM_Mode(int ECHO)                              // a low pull on pin COMP/TRIG  triggering a sensor reading
+int PWM_Mode(int ECHO)                              // a low pull on pin COMP/TRIG  triggering a sensor reading
 {
   Serial.print("Distance Measured=");
   digitalWrite(URTRIG, LOW);
   digitalWrite(URTRIG, HIGH);               // reading Pin PWM will output pulses
-  if( Measure)
+
+  unsigned long LowLevelTime = pulseIn(ECHO, LOW) ;
+  if(LowLevelTime>=45000)                 // the reading is invalid.
   {
-    unsigned long LowLevelTime = pulseIn(ECHO, LOW) ;
-    if(LowLevelTime>=45000)                 // the reading is invalid.
-    {
-      Serial.print("Invalid");
-    }
-    else{
+    Serial.print("Invalid");
+    return ERROR_VALUE;
+  }
+  else{
     DistanceMeasured = LowLevelTime /50;   // every 50us low level stands for 1cm
     Serial.print("Capteur ");
     Serial.println(ECHO);
     Serial.print(DistanceMeasured);
     Serial.println("cm");
+    return DistanceMeasured;
   }
-
-  }
- /* else {
-    sensorValue = analogRead(sensorPin);
-    if(sensorValue<=10)                   // the reading is invalid.
-    {
-      Serial.print("Invalid");
-    }
-    else {
-    sensorValue = sensorValue*0.718;
-    Serial.print(sensorValue);
-    Serial.println("cm");
-    }
-  }*/
 }
 
 
@@ -110,7 +102,7 @@ void setup()
   Serial.begin(9600);                        // Sets the baud rate to 9600
   pinMode(URTRIG,OUTPUT);                    // A low pull on pin COMP/TRIG
   digitalWrite(URTRIG,HIGH);                 // Set to HIGH
-  pinMode(URECHO, INPUT);                    // Sending Enable PWM mode command
+  //pinMode(URECHO1, INPUT);                    // Sending Enable PWM mode command
   delay(500);
   Serial.println("Init the sensor");
 
@@ -119,29 +111,53 @@ void setup()
   mot.attach(9,1000,2000); // (pin, min pulse width, max pulse width in microseconds) 
   dir.attach(6, 1000, 2000);
   delay(1500);
+}
 
+// Return an array with the values of ultrasons 
+int* get_ultrason_values()
+{
+  int* sonar_values = malloc(NB_SONAR * sizeof(int));
+  for (unsigned int i; i < NB_SONAR; ++i)
+  {
+    sonar_values[i] = PWM_Mode(URECHO_array[i]);
+  }
+  return sonar_values;
+}
 
- }
+void car_control(int* sonar_values)
+{
+  // Go forward => no obstacle in front
+  if (/*sonar_values[0] > LIMIT_DISTANCE &&*/ sonar_values[1] > LIMIT_DISTANCE) // Sonar from the left and the middle OK
+  {
+    setSpeed(107);
+    //delay(800);
+  }
+  // Turn right => obstacle on the left
+  else if (sonar_values[0] < LIMIT_DISTANCE /*&& sonar_values[1] > LIMIT_DISTANCE*/) // Sonar from the left NOT OK but sonar from the middle OK
+  {
+    setAngle(40);
+    delay(900);
+    //setSpeed(107);
+    //delay(800);
+  }
+  // Go backward => Obstacle on the left and middle
+  else if (/*sonar_values[0] < LIMIT_DISTANCE && sonar_values[1] < LIMIT_DISTANCE &&*/ sonar_values[2] > LIMIT_DISTANCE)
+  {
+    setSpeed(75); // Go backward
+    //delay(800);
+  }
+  // Turn left => Obstacle on the right 
+  else // (sonar_values[0] > LIMIT_DISTANCE /*&& sonar_values[1] > LIMIT_DISTANCE*/) //FIXME : no sonar on the left
+  {
+    setAngle(100);
+    delay(900);
+    //setSpeed(107);
+    //delay(800);
+    
+  }
+}
 
 void loop()
 {
-  // ------ For ultrason ------
-  PWM_Mode(URECHO);
-  delay(100);
-  PWM_Mode(URECHO2);
-  delay(100);
-  PWM_Mode(URECHO3);
-  // ------ For moving the car ------
-  if (DistanceMeasured > LIMIT_DISTANCE || sensorValue > LIMIT_DISTANCE)
-  {
-    setSpeed(107);
-    delay(800);
-  }
-  else
-  {
-    setSpeed(75); // Go backward
-    delay(800);
-    setAngle(40);
-    delay(2000);
-  }
+  car_control(get_ultrason_values());
 }
