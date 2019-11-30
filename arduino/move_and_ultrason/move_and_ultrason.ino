@@ -49,31 +49,31 @@ void setAngle(int n) //Keep beetween 0 (right) and 180 (left)
 // ------------- FOR THE ULTRASON ------------
 
 #define ERROR_VALUE -1
-#define NB_SONAR 3
+#define NB_SONAR 4
 // PWM Output 0-25000US,Every 50US represent 1cm
 
 int URECHO1 = 3; //Ultrason du gauche (quand on regarde la voiture en face)   
 int URECHO2 = 11; // Ultrason de milieu 
-int URECHO3 = 12; // Ultrason arriere
+int URECHO3 = 13; // droite
+int URECHO4 = 12; // Ultrason arriere
 
-int URECHO_array[] = {URECHO1, URECHO2, URECHO3};
+int URECHO_array[] = {URECHO1, URECHO2, URECHO3, URECHO4};
 
 int URTRIG = 5;         // PWM trigger pin
 
 
 // variable to store the value coming from the sensor
 int sensorValue = 0;
-//int sensorVal2 = 0;
-//int sensorVal3 = 0;
+
+int sonar_values[NB_SONAR] = {0,0,0,0};
 
 
-//int sensorPin = A0;     // select the input pin for the potentiometer
 
 unsigned int DistanceMeasured= 0;
 
 int PWM_Mode(int ECHO)                              // a low pull on pin COMP/TRIG  triggering a sensor reading
 {
-  Serial.print("Distance Measured=");
+  //Serial.print("Distance Measured=");
   digitalWrite(URTRIG, LOW);
   digitalWrite(URTRIG, HIGH);               // reading Pin PWM will output pulses
 
@@ -114,50 +114,51 @@ void setup()
 }
 
 // Return an array with the values of ultrasons 
-int* get_ultrason_values()
+void get_ultrason_values()
 {
-  int* sonar_values = malloc(NB_SONAR * sizeof(int));
-  for (unsigned int i; i < NB_SONAR; ++i)
+  
+  for (unsigned int i = 0; i < NB_SONAR; ++i)
   {
     sonar_values[i] = PWM_Mode(URECHO_array[i]);
+    delay(100);
   }
-  return sonar_values;
-}
+ }
 
 void car_control(int* sonar_values)
 {
   // Go forward => no obstacle in front
-  if (/*sonar_values[0] > LIMIT_DISTANCE &&*/ sonar_values[1] > LIMIT_DISTANCE) // Sonar from the left and the middle OK
+  if (sonar_values[0] > LIMIT_DISTANCE && sonar_values[1] > LIMIT_DISTANCE && sonar_values[2] > LIMIT_DISTANCE) 
   {
     setSpeed(107);
     //delay(800);
   }
   // Turn right => obstacle on the left
-  else if (sonar_values[0] < LIMIT_DISTANCE /*&& sonar_values[1] > LIMIT_DISTANCE*/) // Sonar from the left NOT OK but sonar from the middle OK
+  else if (sonar_values[0] < LIMIT_DISTANCE && sonar_values[2] > LIMIT_DISTANCE) // Sonar from the left NOT OK but sonar from the right OK
   {
     setAngle(40);
-    delay(900);
+    delay(2000);
     //setSpeed(107);
-    //delay(800);
-  }
-  // Go backward => Obstacle on the left and middle
-  else if (/*sonar_values[0] < LIMIT_DISTANCE && sonar_values[1] < LIMIT_DISTANCE &&*/ sonar_values[2] > LIMIT_DISTANCE)
-  {
-    setSpeed(75); // Go backward
     //delay(800);
   }
   // Turn left => Obstacle on the right 
-  else // (sonar_values[0] > LIMIT_DISTANCE /*&& sonar_values[1] > LIMIT_DISTANCE*/) //FIXME : no sonar on the left
+  else if (sonar_values[0] > LIMIT_DISTANCE && sonar_values[2] < LIMIT_DISTANCE)
   {
     setAngle(100);
-    delay(900);
+    delay(2000);
     //setSpeed(107);
     //delay(800);
     
+  }
+  // Go backward => Obstacle on the left and middle
+  else if (sonar_values[3] > LIMIT_DISTANCE)
+  {
+    setSpeed(75); // Go backward
+    //delay(800);
   }
 }
 
 void loop()
 {
-  car_control(get_ultrason_values());
+    get_ultrason_values();
+    car_control(sonar_values);
 }
