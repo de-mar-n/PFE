@@ -52,9 +52,9 @@ void setAngle(int n) //Keep beetween 0 (right) and 180 (left)
 #define NB_SONAR 4
 // PWM Output 0-25000US,Every 50US represent 1cm
 
-int URECHO1 = 3; //Ultrason du gauche (quand on regarde la voiture en face)   
+int URECHO1 = 3; //Ultrason du droite (quand on regarde la voiture en face)   
 int URECHO2 = 11; // Ultrason de milieu 
-int URECHO3 = 13; // droite
+int URECHO3 = 13; // gauche
 int URECHO4 = 12; // Ultrason arriere
 
 int URECHO_array[] = {URECHO1, URECHO2, URECHO3, URECHO4};
@@ -120,7 +120,6 @@ void get_ultrason_values()
   for (unsigned int i = 0; i < NB_SONAR; ++i)
   {
     sonar_values[i] = PWM_Mode(URECHO_array[i]);
-    delay(100);
   }
  }
 
@@ -129,32 +128,40 @@ void car_control(int* sonar_values)
   // Go forward => no obstacle in front
   if (sonar_values[0] > LIMIT_DISTANCE && sonar_values[1] > LIMIT_DISTANCE && sonar_values[2] > LIMIT_DISTANCE) 
   {
+    setAngle(90);
     setSpeed(107);
-    //delay(800);
+    Serial.print("forward");
   }
-  // Turn right => obstacle on the left
+  // Turn left => obstacle on the left
   else if (sonar_values[0] < LIMIT_DISTANCE && sonar_values[2] > LIMIT_DISTANCE) // Sonar from the left NOT OK but sonar from the right OK
   {
-    setAngle(40);
-    delay(2000);
-    //setSpeed(107);
-    //delay(800);
+    setAngle(140);
+    setSpeed(107);
+    Serial.print("left");
+
   }
-  // Turn left => Obstacle on the right 
+  // Turn right => Obstacle on the right 
   else if (sonar_values[0] > LIMIT_DISTANCE && sonar_values[2] < LIMIT_DISTANCE)
   {
-    setAngle(100);
-    delay(2000);
-    //setSpeed(107);
-    //delay(800);
+    setAngle(40);
+    setSpeed(107);
+    Serial.print("right");
     
   }
   // Go backward => Obstacle on the left and middle
   else if (sonar_values[3] > LIMIT_DISTANCE)
   {
+    setAngle(90);
     setSpeed(75); // Go backward
-    //delay(800);
+    Serial.print("back");
   }
+  else
+  {
+    setSpeed(90);
+    setAngle(90);
+    Serial.print("NOTHING");
+  }
+  delay(100);
 }
 
 void loop()
