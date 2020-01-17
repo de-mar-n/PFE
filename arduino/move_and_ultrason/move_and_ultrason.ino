@@ -57,7 +57,7 @@ const int URTRIG1 = 10;
 const int URECHO2 = 11; // Ultrason de milieu
 const int URTRIG2 = 7;
 const int URECHO3 = 3; // gauche
-const int URTRIG3 = 5;
+const int URTRIG3 = 9;
 const int URECHO4 = 12; // Ultrason arriere
 const int URTRIG4 = 8;
 
@@ -142,7 +142,7 @@ void setup()
 
   // ------- FOR MOVE -------
   // Attach the motor on pin 9
-  mot.attach(9,1000,2000); // (pin, min pulse width, max pulse width in microseconds)
+  mot.attach(5,1000,2000); // (pin, min pulse width, max pulse width in microseconds)
   dir.attach(6, 1000, 2000);
   delay(1500);
   }
@@ -167,18 +167,18 @@ void get_ultrason_values()
     int ECHO = URECHO_array[i];
     if(LowLevelTime>=45000)                 // the reading is invalid.
     {
-      printCapteur(ECHO);
-      Serial.println (" Invalid");
+      /*printCapteur(ECHO);
+      Serial.println (" Invalid");*/
       sonar_values[i] =  ERROR_VALUE;
     }
     else{
       DistanceMeasured = LowLevelTime /50;   // every 50us low level stands for 1cm
-      Serial.print("Capteur ");
+      /*Serial.print("Capteur ");
       //Serial.println(ECHO);
       printCapteur(ECHO);
       Serial.print(" ");
       Serial.print(DistanceMeasured);
-      Serial.println("cm");
+      Serial.println("cm");*/
       sonar_values[i] =  DistanceMeasured;
     }
   }
@@ -189,52 +189,61 @@ void car_control(int* sonar_values)
   // Go forward => no obstacle in front
   if (sonar_values[0] > LIMIT_DISTANCE && sonar_values[1] > LIMIT_DISTANCE && sonar_values[2] > LIMIT_DISTANCE)
   {
-    //setAngle(90);
-    //setSpeed(107);
-    Serial.println("forward");
+    setAngle(90);
+    setSpeed(108);
+    //Serial.println("forward");
   }
   // Turn left => obstacle on the left
   else if (sonar_values[0] < LIMIT_DISTANCE && sonar_values[2] > LIMIT_DISTANCE && sonar_values[1] > LIMIT_DISTANCE) // Sonar from the left NOT OK but sonar from the right OK
   {
-    setAngle(130);
-    //setSpeed(107);
-    Serial.println("left");
+    setAngle(150);
+    setSpeed(107);
+    //Serial.println("left");
 
   }
   // Turn right => Obstacle on the right
   else if (sonar_values[0] > LIMIT_DISTANCE && sonar_values[2] < LIMIT_DISTANCE && sonar_values[1] > LIMIT_DISTANCE)
   {
-    setAngle(50);
-    //setSpeed(107);
-    Serial.println("right");
+    setAngle(40);
+    setSpeed(107);
+    //Serial.println("right");
 
   }
   // Go backward => Obstacle on the left and middle
   else if (sonar_values[3] > LIMIT_DISTANCE)
   {
-    //setAngle(90);
-    //setSpeed(67); // Go backward
-    Serial.println("back");
+    setAngle(90);
+    setSpeed(55); // Go backward
+    //Serial.println("back");
     }
   else
   {
-    //setSpeed(90);
-    //setAngle(90);
-    Serial.println("NOTHING");
+    setAngle(90);
+    setSpeed(90);
+    //Serial.println("NOTHING");
   }
   //delay(50);
 }
 
 void loop()
 {
+  /*
+  for (int i = 90; i > 50; i--)
+  {
+    setSpeed(i);
+    Serial.println(i);
+    delay(1000);
+  }*/
+  
+  
   static int i = 0;
-  int limit = 100;
+  int limit = 10000;
   if (i < limit)
   {
     i++;
     get_ultrason_values();
     car_control(sonar_values);
-    delay(2000);
+    //delay(50);
   }
   else
   {
