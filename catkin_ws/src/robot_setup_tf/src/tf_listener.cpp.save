@@ -1,0 +1,41 @@
+ #include <ros/ros.h>
+ #include <geometry_msgs/PointStamped.h>
+ #include <tf/transform_listener.h>
+
+void transformPoint(const tf::TransformListener& listener)   6   //we'll create a point in the base_laser frame that we'd like to transform to the base_link frame
+   7   geometry_msgs::PointStamped laser_point;
+   8   laser_point.header.frame_id = "base_laser";
+   9 
+  10   //we'll just use the most recent transform available for our simple example
+  11   laser_point.header.stamp = ros::Time();
+  12 
+  13   //just an arbitrary point in space
+  14   laser_point.point.x = 1.0;
+  15   laser_point.point.y = 0.2;
+  16   laser_point.point.z = 0.0;
+  17 
+  18   try{
+  19     geometry_msgs::PointStamped base_point;
+  20     listener.transformPoint("base_link", laser_point, base_point);
+  21 
+  22     ROS_INFO("base_laser: (%.2f, %.2f. %.2f) -----> base_link: (%.2f, %.2f, %.2f) at time %.2f",
+  23         laser_point.point.x, laser_point.point.y, laser_point.point.z,
+  24         base_point.point.x, base_point.point.y, base_point.point.z, base_point.header.stamp.toSec());
+  25   }
+  26   catch(tf::TransformException& ex){
+  27     ROS_ERROR("Received an exception trying to transform a point from \"base_laser\" to \"base_link\": %s", ex.what());
+  28   }
+  29 }
+  30 
+  31 int main(int argc, char** argv){
+  32   ros::init(argc, argv, "robot_tf_listener");
+  33   ros::NodeHandle n;
+  34 
+  35   tf::TransformListener listener(ros::Duration(10));
+  36 
+  37   //we'll transform a point once every second
+  38   ros::Timer timer = n.createTimer(ros::Duration(1.0), boost::bind(&transformPoint, boost::ref(listener)));
+  39 
+  40   ros::spin();
+  41 
+  42 }

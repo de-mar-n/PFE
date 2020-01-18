@@ -1,0 +1,13 @@
+<launch>
+
+   <node pkg="sensor_msg" type="sensor_msg" name="sensor_msg" output="screen">
+    <param name="sensor_param" value="param_value" />
+ </node>
+ <node pkg="odometry" type="odometry" name="odometry" output="screen">
+    <param name="odom_param" value="param_value" />
+ </node>
+ <node pkg="robot_setup_tf" type="robot_setup_tf" name="robot_setup_tf" output="screen">
+    <param name="transform_configuration_param" value="param_value" />
+ </node>
+
+</launch>
